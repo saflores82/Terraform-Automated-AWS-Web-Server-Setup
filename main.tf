@@ -167,11 +167,3 @@ resource "aws_lambda_permission" "allow_sns" {
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.sns_topic.arn
 }
-
-output "instance_public_ip" {
-  value = aws_instance.web_server.public_ip
-}
-
-output "sns_topic_arn" {
-  value = aws_sns_topic.sns_topic.arn
-}
