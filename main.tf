@@ -1,12 +1,11 @@
 provider "aws" {
   region = var.aws_region
 }
-
-resource "aws_key_pair" "deployer" {
-  key_name   = var.key_pair_name
-  public_key = file("~/.ssh/id_rsa.pub")
+data "archive_file" "zip" {
+  type        = "zip"
+  source_file = "lambda_function.py"
+  output_path = "lambda_function.zip"
 }
-
 resource "aws_security_group" "web_sg" {
   name_prefix = "web-sg-"
 
@@ -35,9 +34,15 @@ resource "aws_security_group" "web_sg" {
 resource "aws_instance" "web_server" {
   ami           = var.ami_id
   instance_type = var.instance_type
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = "vockey"
   security_groups = [aws_security_group.web_sg.name]
-
+  connection{
+   type         = "ssh"
+   user         = "ec2-user"
+   private_key  = file("ssh.pem")
+   host         = self.public_ip
+  
+}
   user_data = <<-EOF
               #!/bin/bash
               yum update -y
@@ -80,7 +85,7 @@ resource "aws_instance" "web_server" {
                   \$name = \$_POST["name"];
                   \$email = \$_POST["email"];
                   \$message = \$_POST["message"];
-                  \$snsTopicArn = 'REPLACE_WITH_SNS_TOPIC_ARN';
+                  \$snsTopicArn = 'arn:aws:sns:us-east-1:472465447779:misns';
                   \$snsClient = new SnsClient([
                       'version' => 'latest',
                       'region' => 'us-east-1'
@@ -117,41 +122,22 @@ resource "aws_instance" "web_server" {
   }
 }
 
-resource "aws_iam_role" "lambda_role" {
-  name = "LabRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_attach_policy" {
-  role       = aws_iam_role.lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSSNSFullAccess"
-}
-
 resource "aws_lambda_function" "process_form" {
-  function_name = var.lambda_function_name
-  role          = aws_iam_role.lambda_role.arn
-  handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.7"
-  filename = "lambda_function_payload.zip"
-  source_code_hash = filebase64sha256("lambda_function_payload.zip")
+  function_name     = var.lambda_function_name
+  role              = "arn:aws:iam::472465447779:role/LabRole"
+  handler           = "lambda_function.lambda_handler"
+  runtime           = "python3.12"
+
+  filename         = data.archive_file.zip.output_path
+  source_code_hash = data.archive_file.zip.output_base64sha256
   
   timeout = 60
 
 }
 
+
 resource "aws_sns_topic" "sns_topic" {
-  name = var.sns_topic_name
+  name = "misns"
 }
 
 resource "aws_sns_topic_subscription" "lambda_subscription" {
@@ -159,11 +145,16 @@ resource "aws_sns_topic_subscription" "lambda_subscription" {
   protocol  = "lambda"
   endpoint  = aws_lambda_function.process_form.arn
 }
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.sns_topic.arn
+  protocol  = "email"
+  endpoint  = "salvador.flores@tajamar365.com"
+}
 
-resource "aws_lambda_permission" "allow_sns" {
+resource "aws_lambda_permission" "with_sns" {
   statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.process_form.function_name
+  function_name = aws_lambda_function.example_lambda.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.sns_topic.arn
+  source_arn    = aws_sns_topic.example.arn
 }
