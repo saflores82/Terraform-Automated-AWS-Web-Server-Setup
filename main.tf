@@ -142,16 +142,12 @@ resource "aws_lambda_function" "process_form" {
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.12"
-  source_code_hash = filebase64sha256("lambda_function_payload.zip")
-
-  environment {
-    variables = {
-      SLACK_WEBHOOK_URL = var.slack_webhook_url
-    }
-  }
-
+  runtime       = "python3.7"
   filename = "lambda_function_payload.zip"
+  source_code_hash = filebase64sha256("lambda_function_payload.zip")
+  
+  timeout = 60
+
 }
 
 resource "aws_sns_topic" "sns_topic" {
