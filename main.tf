@@ -45,15 +45,15 @@ resource "aws_instance" "web_server" {
 }
   user_data = <<-EOF
               #!/bin/bash
-              yum update -y
-              yum install -y httpd php php-cli php-json php-mbstring
-              service httpd start
-              chkconfig httpd on
+              sudo yum update -y
+              sudo yum install -y httpd php php-cli php-json php-mbstring
+              sudo service httpd start
+              sudo chkconfig httpd on
               cd /var/www/html
-              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-              php composer-setup.php
-              php -r "unlink('composer-setup.php');"
-              yes | php composer.phar require aws/aws-sdk-php
+              sudo php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              sudo php composer-setup.php
+              sudo php -r "unlink('composer-setup.php');"
+              yes | sudo php composer.phar require aws/aws-sdk-php
               cat <<EOM > /var/www/html/index.html
               <!DOCTYPE html>
               <html lang="en">
@@ -85,7 +85,7 @@ resource "aws_instance" "web_server" {
                   \$name = \$_POST["name"];
                   \$email = \$_POST["email"];
                   \$message = \$_POST["message"];
-                  \$snsTopicArn = 'arn:aws:sns:us-east-1:472465447779:misns';
+                  \$snsTopicArn = 'arn:aws:sns:us-east-1:498399109096:misns';
                   \$snsClient = new SnsClient([
                       'version' => 'latest',
                       'region' => 'us-east-1'
@@ -124,7 +124,7 @@ resource "aws_instance" "web_server" {
 
 resource "aws_lambda_function" "process_form" {
   function_name     = var.lambda_function_name
-  role              = "arn:aws:iam::472465447779:role/LabRole"
+  role              = "arn:aws:iam::498399109096:role/LabRole"
   handler           = "lambda_function.lambda_handler"
   runtime           = "python3.12"
   filename         = data.archive_file.zip.output_path
