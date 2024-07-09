@@ -15,3 +15,6 @@ Voy a IAM Roles/LaRole/Attached
 AWSLambda_FullAccess
 
 AWSSNSFullAccess
+
+Install Terraform
+https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
