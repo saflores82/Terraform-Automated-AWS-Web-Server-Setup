@@ -2,10 +2,10 @@ import urllib3
 import json
 http = urllib3.PoolManager()
 def lambda_handler(event, context):
-    url = "https://hooks.slack.com/services/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"
+    url = "https://hooks.slack.com/services/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"
     msg = {
         "channel": "#terraform",
-        "username": "your_username",
+        "username": "salvador,flores",
         "text": event['Records'][0]['Sns']['Message'],
         "icon_emoji": ""
     }

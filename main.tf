@@ -32,15 +32,15 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_instance" "web_server" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  key_name      = "vockey"
-  security_groups = [aws_security_group.web_sg.name]
-  connection{
-   type         = "ssh"
-   user         = "ec2-user"
-   private_key  = file("ssh.pem")
-   host         = self.public_ip
+  ami              = var.ami_id
+  instance_type    = var.instance_type
+  key_name         = "vockey"
+  security_groups  = [aws_security_group.web_sg.name]
+  connection {
+   type           = "ssh"
+   user           = "ec2-user"
+   private_key    = file("ssh.pem")
+   host           = self.public_ip
   
 }
   user_data = <<-EOF
@@ -53,7 +53,7 @@ resource "aws_instance" "web_server" {
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
               php composer-setup.php
               php -r "unlink('composer-setup.php');"
-              php composer.phar require aws/aws-sdk-php
+              yes | php composer.phar require aws/aws-sdk-php
               cat <<EOM > /var/www/html/index.html
               <!DOCTYPE html>
               <html lang="en">
@@ -127,7 +127,6 @@ resource "aws_lambda_function" "process_form" {
   role              = "arn:aws:iam::472465447779:role/LabRole"
   handler           = "lambda_function.lambda_handler"
   runtime           = "python3.12"
-
   filename         = data.archive_file.zip.output_path
   source_code_hash = data.archive_file.zip.output_base64sha256
   
@@ -154,7 +153,7 @@ resource "aws_sns_topic_subscription" "email_subscription" {
 resource "aws_lambda_permission" "with_sns" {
   statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.example_lambda.function_name
+  function_name = aws_lambda_function.process_form.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.example.arn
+  source_arn    = aws_sns_topic.sns_topic.arn
 }
